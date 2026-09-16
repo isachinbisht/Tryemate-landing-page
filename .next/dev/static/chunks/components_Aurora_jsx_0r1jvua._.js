@@ -119,17 +119,11 @@ void main() {
   float midPoint = 0.20;
   float auroraAlpha = smoothstep(midPoint - uBlend * 0.5, midPoint + uBlend * 0.5, intensity);
   
-  vec3 auroraColor = intensity * rampColor;
-  
+  float alpha = clamp(auroraAlpha * intensity * 1.8, 0.0, 0.85);
   if (uLightMode > 0.5) {
-    float energy = clamp(max(intensity, 0.0), 0.0, 1.0);
-    float coverage = clamp(auroraAlpha * (0.55 + 0.45 * energy), 0.0, 0.86);
-    vec3 chroma = pow(clamp(rampColor, 0.0, 1.0), vec3(1.2));
-    float chromaPeak = max(chroma.r, max(chroma.g, chroma.b));
-    chroma /= max(chromaPeak, 0.0001);
-    fragColor = vec4(mix(vec3(1.0), chroma, min(coverage * 1.08, 0.94)), 1.0);
+    fragColor = vec4(rampColor, alpha * 0.75);
   } else {
-    fragColor = vec4(auroraColor * auroraAlpha, auroraAlpha);
+    fragColor = vec4(rampColor, alpha);
   }
 }
 `;
@@ -152,15 +146,21 @@ function Aurora(props) {
             try {
                 renderer = new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$ogl$2f$src$2f$core$2f$Renderer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Renderer"]({
                     alpha: true,
-                    premultipliedAlpha: true,
+                    premultipliedAlpha: false,
                     antialias: true
                 });
                 gl = renderer.gl;
                 if (!gl) return;
                 gl.clearColor(0, 0, 0, 0);
                 gl.enable(gl.BLEND);
-                gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
                 gl.canvas.style.backgroundColor = 'transparent';
+                gl.canvas.style.position = 'absolute';
+                gl.canvas.style.top = '0';
+                gl.canvas.style.left = '0';
+                gl.canvas.style.width = '100%';
+                gl.canvas.style.height = '100%';
+                gl.canvas.style.pointerEvents = 'none';
             } catch (e) {
                 console.warn('Aurora WebGL init failed:', e);
                 return;
@@ -169,8 +169,8 @@ function Aurora(props) {
             function resize() {
                 if (!ctn || !renderer || !program) return;
                 try {
-                    const width = ctn.offsetWidth || 300;
-                    const height = ctn.offsetHeight || 300;
+                    const width = ctn.offsetWidth || window.innerWidth || 300;
+                    const height = ctn.offsetHeight || window.innerHeight || 300;
                     renderer.setSize(width, height);
                     if (program) {
                         program.uniforms.uResolution.value = [
@@ -212,8 +212,8 @@ function Aurora(props) {
                         },
                         uResolution: {
                             value: [
-                                ctn.offsetWidth || 300,
-                                ctn.offsetHeight || 300
+                                ctn.offsetWidth || window.innerWidth || 300,
+                                ctn.offsetHeight || window.innerHeight || 300
                             ]
                         },
                         uBlend: {
