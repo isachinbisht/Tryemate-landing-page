@@ -1,7 +1,7 @@
 'use client';
 
 import { Renderer, Program, Mesh, Color, Triangle } from 'ogl';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import './Aurora.css';
 
@@ -88,7 +88,8 @@ struct ColorStop {
 }
 
 void main() {
-  vec2 uv = gl_FragCoord.xy / uResolution;
+  vec2 res = max(uResolution, vec2(1.0, 1.0));
+  vec2 uv = gl_FragCoord.xy / res;
   
   ColorStop colors[3];
   colors[0] = ColorStop(uColorStops[0], 0.0);
@@ -121,6 +122,7 @@ export default function Aurora(props) {
   propsRef.current = props;
 
   const ctnDom = useRef(null);
+  const [webglFailed, setWebglFailed] = useState(false);
 
   useEffect(() => {
     const ctn = ctnDom.current;
@@ -135,7 +137,10 @@ export default function Aurora(props) {
         antialias: true
       });
       gl = renderer.gl;
-      if (!gl) return;
+      if (!gl) {
+        setWebglFailed(true);
+        return;
+      }
       gl.clearColor(0, 0, 0, 0);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -147,7 +152,8 @@ export default function Aurora(props) {
       gl.canvas.style.height = '100%';
       gl.canvas.style.pointerEvents = 'none';
     } catch (e) {
-      console.warn('Aurora WebGL init failed:', e);
+      console.warn('Aurora WebGL init failed, using fallback gradient:', e);
+      setWebglFailed(true);
       return;
     }
 
@@ -156,15 +162,24 @@ export default function Aurora(props) {
     function resize() {
       if (!ctn || !renderer || !program) return;
       try {
-        const width = ctn.offsetWidth || window.innerWidth || 300;
-        const height = ctn.offsetHeight || window.innerHeight || 300;
+        const width = ctn.offsetWidth || ctn.clientWidth || window.innerWidth || 300;
+        const height = ctn.offsetHeight || ctn.clientHeight || window.innerHeight || 300;
         renderer.setSize(width, height);
         if (program) {
           program.uniforms.uResolution.value = [width, height];
         }
       } catch (_) {}
     }
-    window.addEventListener('resize', resize);
+
+    let resizeObserver;
+    try {
+      resizeObserver = new ResizeObserver(() => {
+        resize();
+      });
+      resizeObserver.observe(ctn);
+    } catch (_) {
+      window.addEventListener('resize', resize);
+    }
 
     let mesh;
     try {
@@ -173,10 +188,19 @@ export default function Aurora(props) {
         delete geometry.attributes.uv;
       }
 
-      const colorStopsArray = colorStops.map(hex => {
-        const c = new Color(hex);
-        return [c.r, c.g, c.b];
-      });
+      const parseColor = (hex) => {
+        try {
+          const c = new Color(hex);
+          return [c.r, c.g, c.b];
+        } catch (_) {
+          return [0.2, 0.4, 0.9];
+        }
+      };
+
+      const colorStopsArray = colorStops.map(parseColor);
+
+      const initialWidth = ctn.offsetWidth || ctn.clientWidth || window.innerWidth || 300;
+      const initialHeight = ctn.offsetHeight || ctn.clientHeight || window.innerHeight || 300;
 
       program = new Program(gl, {
         vertex: VERT,
@@ -185,7 +209,7 @@ export default function Aurora(props) {
           uTime: { value: 0 },
           uAmplitude: { value: amplitude },
           uColorStops: { value: colorStopsArray },
-          uResolution: { value: [ctn.offsetWidth || window.innerWidth || 300, ctn.offsetHeight || window.innerHeight || 300] },
+          uResolution: { value: [initialWidth, initialHeight] },
           uBlend: { value: blend },
           uLightMode: { value: lightMode ? 1 : 0 }
         }
@@ -197,11 +221,20 @@ export default function Aurora(props) {
       }
     } catch (e) {
       console.warn('Aurora mesh creation failed:', e);
-      window.removeEventListener('resize', resize);
+      setWebglFailed(true);
       return;
     }
 
     let animateId = 0;
+    const parseColor = (hex) => {
+      try {
+        const c = new Color(hex);
+        return [c.r, c.g, c.b];
+      } catch (_) {
+        return [0.2, 0.4, 0.9];
+      }
+    };
+
     const update = t => {
       animateId = requestAnimationFrame(update);
       try {
@@ -211,10 +244,7 @@ export default function Aurora(props) {
         program.uniforms.uBlend.value = propsRef.current.blend ?? blend;
         program.uniforms.uLightMode.value = (propsRef.current.lightMode ?? lightMode) ? 1 : 0;
         const stops = propsRef.current.colorStops ?? colorStops;
-        program.uniforms.uColorStops.value = stops.map(hex => {
-          const c = new Color(hex);
-          return [c.r, c.g, c.b];
-        });
+        program.uniforms.uColorStops.value = stops.map(parseColor);
         renderer.render({ scene: mesh });
       } catch (_) {}
     };
@@ -224,7 +254,11 @@ export default function Aurora(props) {
 
     return () => {
       cancelAnimationFrame(animateId);
-      window.removeEventListener('resize', resize);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener('resize', resize);
+      }
       try {
         if (ctn && gl && gl.canvas && gl.canvas.parentNode === ctn) {
           ctn.removeChild(gl.canvas);
@@ -233,6 +267,24 @@ export default function Aurora(props) {
       } catch (_) {}
     };
   }, [amplitude, blend, lightMode]);
+
+  if (webglFailed) {
+    return (
+      <div
+        className="aurora-container"
+        style={{
+          background: lightMode
+            ? 'radial-gradient(ellipse at top, rgba(59, 130, 246, 0.35), rgba(147, 197, 253, 0.15), transparent 70%)'
+            : 'radial-gradient(ellipse at top, rgba(30, 96, 205, 0.5), rgba(0, 85, 255, 0.2), transparent 70%)',
+          width: '100%',
+          height: '100%',
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none'
+        }}
+      />
+    );
+  }
 
   return <div ref={ctnDom} className="aurora-container" />;
 }

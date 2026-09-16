@@ -35,9 +35,7 @@ import {
 import { applyTheme } from '@/lib/theme';
 import { useGeoCurrency } from '@/hooks/useGeoCurrency';
 import RazorpayCheckout from '@/components/RazorpayCheckout';
-import dynamic from 'next/dynamic';
-
-const Aurora = dynamic(() => import('@/components/Aurora'), { ssr: false });
+import Aurora from '@/components/Aurora';
 
 const logos = [
   'Physics',

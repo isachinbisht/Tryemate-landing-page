@@ -1,10 +1,1 @@
-{
-  "[project]/components/Aurora.jsx [app-client] (ecmascript, next/dynamic entry)": {
-    "id": "[project]/components/Aurora.jsx [app-client] (ecmascript, next/dynamic entry)",
-    "files": [
-      "static/chunks/node_modules_ogl_src_1ozmz7b._.js",
-      "static/chunks/components_Aurora_jsx_0r1jvua._.js",
-      "static/chunks/components_Aurora_0p-i4e-.css"
-    ]
-  }
-}
+{}
