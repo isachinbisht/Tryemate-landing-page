@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["file:///Users/sachin/Desktop/landing/Tryemate%20landing%20page/components/Aurora.css"],"sourcesContent":[".aurora-container {\n  width: 100%;\n  height: 100%;\n  position: absolute;\n  inset: 0;\n  pointer-events: none;\n}\n"],"names":[],"mappings":"AAAA"}}]
+}

@@ -35,7 +35,9 @@ import {
 import { applyTheme } from '@/lib/theme';
 import { useGeoCurrency } from '@/hooks/useGeoCurrency';
 import RazorpayCheckout from '@/components/RazorpayCheckout';
-import Aurora from '@/components/Aurora';
+import dynamic from 'next/dynamic';
+
+const Aurora = dynamic(() => import('@/components/Aurora'), { ssr: false });
 
 const logos = [
   'Physics',
@@ -126,7 +128,10 @@ export default function LandingPage() {
 
   useEffect(() => {
     const updateTheme = () => {
-      const savedTheme = localStorage.getItem('nk-theme') as 'light' | 'dark' | null;
+      let savedTheme: string | null = null;
+      try {
+        savedTheme = localStorage.getItem('nk-theme');
+      } catch (_) {}
       setDark((savedTheme || 'light') === 'dark');
     };
 
