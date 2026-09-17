@@ -1,8 +1,23 @@
 import { NextResponse } from 'next/server';
-import { razorpay } from '@/lib/razorpay';
+import Razorpay from 'razorpay';
 
 export async function POST(request: Request) {
   try {
+    const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!keyId || keyId.includes('xxxxxxxx') || !keySecret || keySecret.includes('xxxxxxxx')) {
+      return NextResponse.json(
+        { error: 'Razorpay API keys are not configured properly in environment variables.' },
+        { status: 400 }
+      );
+    }
+
+    const razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+
     const { amount, planTier } = await request.json();
 
     if (!amount || amount <= 0) {
@@ -10,11 +25,11 @@ export async function POST(request: Request) {
     }
 
     const options = {
-      amount: Math.round(amount * 100), // Amount in smallest currency unit (paise)
+      amount: Math.round(amount * 100), // Amount in paise
       currency: 'INR',
-      receipt: `receipt_${planTier}_${Date.now()}`,
+      receipt: `rcpt_${Date.now()}`,
       notes: {
-        planTier,
+        planTier: planTier || 'growth',
       },
     };
 
@@ -24,11 +39,13 @@ export async function POST(request: Request) {
       id: order.id,
       currency: order.currency,
       amount: order.amount,
+      keyId: keyId,
     });
   } catch (error: any) {
     console.error('Razorpay order creation error:', error);
+    const errorMessage = error?.error?.description || error?.description || error?.message || 'Failed to create Razorpay order';
     return NextResponse.json(
-      { error: error?.message || 'Failed to create Razorpay order' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
