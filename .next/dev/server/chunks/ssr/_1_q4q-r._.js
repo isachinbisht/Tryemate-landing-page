@@ -3875,18 +3875,87 @@ __turbopack_context__.s([
     ()=>RazorpayCheckout
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
+'use client';
+;
 ;
 function RazorpayCheckout({ amount, planTier, className, children }) {
-    const handleCheckout = ()=>{
-        console.log(`Checkout initiated for ${planTier} plan with amount ${amount}`);
+    const [loading, setLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const loadRazorpayScript = ()=>{
+        return new Promise((resolve)=>{
+            if (window.Razorpay) {
+                resolve(true);
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = ()=>resolve(true);
+            script.onerror = ()=>resolve(false);
+            document.body.appendChild(script);
+        });
+    };
+    const handleCheckout = async ()=>{
+        try {
+            setLoading(true);
+            const scriptLoaded = await loadRazorpayScript();
+            if (!scriptLoaded) {
+                alert('Razorpay SDK failed to load. Please check your internet connection.');
+                setLoading(false);
+                return;
+            }
+            // Create order via backend API
+            const response = await fetch('/api/razorpay/order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    amount,
+                    planTier
+                })
+            });
+            const orderData = await response.json();
+            if (!response.ok) {
+                throw new Error(orderData.error || 'Failed to create order');
+            }
+            const options = {
+                key: orderData.keyId || ("TURBOPACK compile-time value", "rzp_live_Td07DpDwxroGnR"),
+                amount: orderData.amount,
+                currency: orderData.currency,
+                name: 'e-Mate AI',
+                description: `${planTier.toUpperCase()} Plan Subscription`,
+                image: '/android-chrome-512x512.png',
+                order_id: orderData.id,
+                handler: function(response) {
+                    alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
+                },
+                prefill: {
+                    name: '',
+                    email: '',
+                    contact: ''
+                },
+                theme: {
+                    color: '#1f51ff'
+                }
+            };
+            const paymentObject = new window.Razorpay(options);
+            paymentObject.open();
+        } catch (err) {
+            console.error('Checkout error:', err);
+            alert(err.message || 'Payment initiation failed.');
+        } finally{
+            setLoading(false);
+        }
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+        type: "button",
         onClick: handleCheckout,
+        disabled: loading,
         className: className,
-        children: children
+        children: loading ? 'Processing...' : children
     }, void 0, false, {
         fileName: "[project]/components/RazorpayCheckout.tsx",
-        lineNumber: 21,
+        lineNumber: 96,
         columnNumber: 5
     }, this);
 }
