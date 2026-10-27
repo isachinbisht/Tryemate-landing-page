@@ -1,0 +1,26 @@
+# e-Mate AI
+
+> e-Mate AI is an all-in-one AI study workspace that turns textbooks, lecture slides, and notes into interactive learning workflows.
+
+## About
+
+e-Mate AI helps students learn more effectively with AI-powered flashcards, practice quizzes, active recall workflows, visual notes, notebooks, and coding tools.
+
+## Features
+
+- Upload study materials and turn them into flashcards, quizzes, and study workflows.
+- Use AI models for explanations, research, and everyday study support.
+- Work with notebooks, Canvas, and interactive programming workflows.
+- Keep study data private and secure.
+- Use BYOK (bring your own key) support where available.
+
+## Plans
+
+- **e-Mate AI Plus:** Higher study limits, visual note generation, Flash Thinking, and 100GB notebook storage.
+- **e-Mate AI Pro:** Advanced model access, higher limits, Canvas, and notebook study tools.
+- **e-Mate AI Ultra:** Higher capacity, priority execution, dedicated compute infrastructure, and shared team workspaces.
+
+## Primary website
+
+- [e-Mate AI](https://emate-ai.vercel.app/)
+
